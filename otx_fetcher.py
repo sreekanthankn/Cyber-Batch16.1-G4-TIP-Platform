@@ -1,15 +1,15 @@
 # otx_fetcher.py
-# Week 1 - OSINT Ingestion: Fetches threat indicators from AlienVault OTX
+# Week 1 - OSINT Ingestion: Fetches and stores threat data from AlienVault OTX
 
 import os
 import requests
 from dotenv import load_dotenv
+from db_handler import save_pulses
 
-# Load API keys from .env file
+# Load API keys
 load_dotenv()
 OTX_API_KEY = os.getenv("OTX_API_KEY")
 
-# AlienVault OTX base URL
 BASE_URL = "https://otx.alienvault.com/api/v1"
 
 def fetch_latest_pulses():
@@ -24,8 +24,10 @@ def fetch_latest_pulses():
         data = response.json()
         pulses = data.get("results", [])
         print(f"[+] Successfully fetched {len(pulses)} threat pulses.")
-        for pulse in pulses[:3]:
-            print(f"    - {pulse['name']} | Indicators: {pulse.get('indicator_count', pulse.get('indicators_count', 'N/A'))}")
+
+        # Save to MongoDB
+        print("[*] Saving to MongoDB...")
+        save_pulses(pulses)
         return pulses
     else:
         print(f"[-] Failed to fetch data. Status code: {response.status_code}")
