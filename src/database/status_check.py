@@ -11,7 +11,7 @@ def check_db_status():
     displays statistics for each team member's source.
     """
     db = get_database()
-    if not db:
+    if db is None:
         print("\n[-] STATUS: CONNECTION FAILED")
         print("Please check your .env file and MongoDB service.")
         return
