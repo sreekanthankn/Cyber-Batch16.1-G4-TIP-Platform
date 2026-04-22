@@ -48,7 +48,7 @@ def extract_indicators(pulses):
                     "indicator": indicator.get("indicator", ""),
                     "type": itype,
                     "source": "AlienVault OTX",
-                    "risk_score": 75,  # Default risk score for OTX indicators
+                    "risk_score": 90 if itype == "IPv4" else 80 if itype == "URL" else 70,
                     "timestamp": datetime.now(timezone.utc),
                     "pulse_name": pulse.get("name", ""),
                 }
