@@ -1,0 +1,20 @@
+# Security: Ignore environment variables containing API keys
+.env
+
+# Python: Ignore compiled files and cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Environments: Ignore virtual environments
+venv/
+env/
+ENV/
+
+# OS: Ignore system-specific files
+.DS_Store
+Thumbs.db
+
+# VS Code: Ignore workspace settings
+.vscode/
