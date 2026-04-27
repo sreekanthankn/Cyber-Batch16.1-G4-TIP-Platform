@@ -7,6 +7,9 @@ This repository contains the **Advanced Threat Intelligence Platform (TIP) & Dyn
 * **Project Lead:** Sreekanthan K N
 * **Team Members:** Nikhil S, Sudarshan Mahto, Amaan Roshan, Akanksha Sharma
 
+## 🚀 Week 3 Status: The Enrichment & Intelligence Layer
+We have moved beyond raw data ingestion. The platform now converts raw indicators into actionable intelligence by contextualizing every threat.
+
 ### ✅ Completed Milestones:
 * **DNS Resolution Engine**: Integrated logic to resolve malicious domains and phishing URLs into numerical IPv4 addresses for infrastructure-level blocking.
 * **Geo-IP & ASN Enrichment**: Automated mapping of indicators to geographic locations (Country, City) and network providers (ISP, ASN).
