@@ -45,9 +45,11 @@ This repository contains the **Advanced Threat Intelligence Platform (TIP) & Dyn
 ---
 
 ## 🚀 Installation & Setup
+1. ## 🚀 Installation & Setup
+
 1. **Clone the repository:**
    ```bash
-   git clone [https://github.com/sreekanthankn/Cyber-Batch16.1-G4-TIP-Platform.git](https://github.com/sreekanthankn/Cyber-Batch16.1-G4-TIP-Platform.git)
+   git clone [https://github.com/Infotact-Intern-3Month-F16-1-G4/Cyber-Batch16.1-G4-TIP-Platform.git](https://github.com/Infotact-Intern-3Month-F16-1-G4/Cyber-Batch16.1-G4-TIP-Platform.git)
 
 ***2. Configure Environment:***
 
