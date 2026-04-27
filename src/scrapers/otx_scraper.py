@@ -1,6 +1,5 @@
 # otx_scraper.py
-# Week 2 - AlienVault OTX Scraper - 
-# Extracts IPs and URLs from OTX pulses and saves to MongoDB
+# Week 3 - AlienVault OTX Scraper with Pulse Metadata Enrichment
 # Contributor: Amaan Roshan
 
 import os
@@ -9,95 +8,85 @@ from datetime import datetime, timezone
 from dotenv import load_dotenv
 import sys
 
-# Add project root to path so we can import db_connection
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../'))
 from src.database.db_connection import get_database
 
-# Load API keys from .env file
 load_dotenv()
 OTX_API_KEY = os.getenv("OTX_API_KEY")
 BASE_URL = "https://otx.alienvault.com/api/v1"
 
-def fetch_pulses():
-    """Fetch latest threat pulses from AlienVault OTX."""
-    url = f"{BASE_URL}/pulses/subscribed"
-    headers = {"X-OTX-API-KEY": OTX_API_KEY}
+class OTXScraper:
+    """AlienVault OTX Scraper - Extracts IPs, URLs and pulse metadata."""
 
-    print("[*] Connecting to AlienVault OTX...")
-    response = requests.get(url, headers=headers)
+    def __init__(self):
+        self.db = get_database()
+        self.collection = self.db["threat_indicators"] if self.db is not None else None
 
-    if response.status_code == 200:
-        pulses = response.json().get("results", [])
-        print(f"[+] Fetched {len(pulses)} threat pulses.")
-        return pulses
-    else:
-        print(f"[-] Failed to fetch. Status: {response.status_code}")
-        return []
-
-def extract_indicators(pulses):
-    """Extract IPs and URLs from pulses into standardized format."""
-    indicators = []
-
-    for pulse in pulses:
-        for indicator in pulse.get("indicators", []):
-            itype = indicator.get("type", "")
-
-            # Only extract IPv4 and URLs
-            if itype in ["IPv4", "URL", "domain", "hostname"]:
-                doc = {
-                    "indicator": indicator.get("indicator", ""),
-                    "type": itype,
-                    "source": "AlienVault OTX",
-                    "risk_score": 90 if itype == "IPv4" else 80 if itype == "URL" else 70,
-                    "timestamp": datetime.now(timezone.utc),
-                    "pulse_name": pulse.get("name", ""),
-                }
-                indicators.append(doc)
-
-    print(f"[+] Extracted {len(indicators)} indicators (IPs and URLs).")
-    return indicators
-
-def save_indicators(indicators):
-    """Save indicators to MongoDB, skipping duplicates."""
-    db = get_database()
-    if db is None:
-        print("[-] Database connection failed. Aborting.")
-        return
-
-    collection = db["threat_indicators"]
-    saved = 0
-    skipped = 0
-
-    for doc in indicators:
-        # Check for duplicates based on indicator value
-        existing = collection.find_one({"indicator": doc["indicator"]})
-        if not existing:
-            collection.insert_one(doc)
-            saved += 1
+    def fetch_pulses(self):
+        """Fetch latest threat pulses from AlienVault OTX."""
+        url = f"{BASE_URL}/pulses/subscribed"
+        headers = {"X-OTX-API-KEY": OTX_API_KEY}
+        print("[*] Connecting to AlienVault OTX...")
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            pulses = response.json().get("results", [])
+            print(f"[+] Fetched {len(pulses)} threat pulses.")
+            return pulses
         else:
-            skipped += 1
+            print(f"[-] Failed to fetch. Status: {response.status_code}")
+            return []
 
-    print(f"[+] Saved: {saved} new indicators.")
-    print(f"[~] Skipped: {skipped} duplicates.")
+    def extract_indicators(self, pulses):
+        """Extract IPs and URLs with pulse metadata."""
+        indicators = []
+        for pulse in pulses:
+            for indicator in pulse.get("indicators", []):
+                itype = indicator.get("type", "")
+                if itype in ["IPv4", "URL", "domain", "hostname"]:
+                    doc = {
+                        "indicator": indicator.get("indicator", ""),
+                        "type": itype,
+                        "source": "AlienVault OTX",
+                        "risk_score": 90 if itype == "IPv4" else 80 if itype == "URL" else 70,
+                        "timestamp": datetime.now(timezone.utc),
+                        "enrichment": {
+                            # Week 3: Pulse metadata fields
+                            "pulse_name": pulse.get("name", "N/A"),
+                            "tags": pulse.get("tags", []),
+                            "description": pulse.get("description", "N/A"),
+                            "country": "N/A",
+                            "asn": "N/A",
+                            "isp": "N/A"
+                        }
+                    }
+                    indicators.append(doc)
+        print(f"[+] Extracted {len(indicators)} indicators with metadata.")
+        return indicators
 
-def run():
-    """Main function to run the OTX scraper."""
-    print("=" * 50)
-    print("  AlienVault OTX Scraper - Week 2")
-    print("=" * 50)
-    pulses = fetch_pulses()
-    if pulses:
-        indicators = extract_indicators(pulses)
-        if indicators:
-            save_indicators(indicators)
-    print("[*] OTX Scraper finished.")
+    def save_indicators(self, indicators):
+        """Save indicators to MongoDB, skipping duplicates."""
+        if self.collection is None:
+            print("[-] Database connection failed. Aborting.")
+            return
+        saved = 0
+        skipped = 0
+        for doc in indicators:
+            existing = self.collection.find_one({"indicator": doc["indicator"]})
+            if not existing:
+                self.collection.insert_one(doc)
+                saved += 1
+            else:
+                skipped += 1
+        print(f"[+] OTX - Saved: {saved} new | Skipped: {skipped} duplicates.")
 
-#if __name__ == "__main__":
- #   run()
-    
-def run():
-    pulses = fetch_pulses()
-    if pulses:
-        # Return the list of indicators instead of saving here
-        return extract_indicators(pulses) 
-    return []
+    def run(self):
+        """Main method called by main.py."""
+        print("\n" + "="*50)
+        print("  AlienVault OTX Scraper - Week 3")
+        print("="*50)
+        pulses = self.fetch_pulses()
+        if pulses:
+            indicators = self.extract_indicators(pulses)
+            if indicators:
+                self.save_indicators(indicators)
+        print("[*] OTX Scraper finished.")
