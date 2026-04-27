@@ -27,7 +27,7 @@ def resolve_to_ip(indicator, indicator_type):
         return None
 
 def run_enrichment():
-    """Main logic to enrich indicators with geographic and provider data."""
+    """Main logic with integrated AUTO-CLEANUP for dead indicators."""
     db = get_database()
     if db is None: return
     collection = db["threat_indicators"]
@@ -35,14 +35,15 @@ def run_enrichment():
     # Target records without enrichment
     targets = collection.find({"enrichment": {"$exists": False}})
     
-    count = 0
+    enriched_count = 0
+    deleted_count = 0
+    
     for doc in targets:
         target_ip = None
         
         if doc['type'] == 'IPv4':
             target_ip = doc['indicator']
         elif doc['type'] in ['domain', 'URL']:
-            print(f"[*] Resolving DNS for {doc['type']}: {doc['indicator']}")
             target_ip = resolve_to_ip(doc['indicator'], doc['type'])
 
         if target_ip:
@@ -56,10 +57,16 @@ def run_enrichment():
                     "isp": metadata.get("isp", "Unknown")
                 }
                 collection.update_one({"_id": doc["_id"]}, {"$set": {"enrichment": enrichment_data}})
-                count += 1
+                enriched_count += 1
                 time.sleep(1.5) # API Rate Limit protection
+        
+        # --- NEW LOGIC FOR COMMIT 2: AUTO-CLEANUP ---
+        elif doc['type'] in ['domain', 'URL']:
+            print(f"[!] DNS Failed. Deleting dead threat: {doc['indicator']}")
+            collection.delete_one({"_id": doc["_id"]})
+            deleted_count += 1
                 
-    print(f"\n[SUCCESS] Phase 1: Enriched {count} indicators.")
-
+    print(f"\n[SUCCESS] Phase 2: {enriched_count} Enriched | {deleted_count} Purged.")
+    
 if __name__ == "__main__":
     run_enrichment()
