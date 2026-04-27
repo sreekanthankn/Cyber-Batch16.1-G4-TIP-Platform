@@ -1,36 +1,42 @@
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+# Ensures the project root is in the path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.scrapers import otx_scraper, abuseipdb_scraper, phishtank_scraper
-from src.processors.normalizer import normalize_data, save_to_db
+from src.scrapers.otx_scraper import OTXScraper
+from src.scrapers.phishtank_scraper import PhishTankScraper
+from src.scrapers.abuseipdb_scraper import AbuseIPDBScraper
+from src.processors.enricher import run_enrichment 
 
 def main():
-    print("=" * 60)
-    print("  CYBER-TIP PLATFORM: NORMALIZED INGESTION")
-    print("=" * 60)
+    print("="*60)
+    print("      CYBER-TIP PLATFORM: INGESTION & ENRICHMENT ")
+    print("="*60)
 
-    scraper_list = [
-        (otx_scraper.run, "AlienVault OTX"),
-        (abuseipdb_scraper.run, "AbuseIPDB"),
-        (phishtank_scraper.run, "PhishTank")
-    ]
-
-    for run_func, source_name in scraper_list:
-        print(f"[*] Extracting from {source_name}...")
-        raw_indicators = run_func() # Get data from scraper
+    # --- PHASE 1: INGESTION ---
+    print("\n[*] Initializing OSINT Scrapers...")
+    
+    # Initialize and run each scraper
+    try:
+        otx = OTXScraper()
+        otx.run()
         
-        saved_count = 0
-        for item in raw_indicators:
-            # Sreekanth's Normalizer in action:
-            clean_doc = normalize_data(item, source_name)
-            if clean_doc:
-                if save_to_db(clean_doc):
-                    saved_count += 1
+        abuse = AbuseIPDBScraper()
+        abuse.run()
         
-        print(f"[+] {source_name}: Successfully normalized and saved {saved_count} records.")
+        phish = PhishTankScraper()
+        phish.run()
+        print("\n[SUCCESS] Phase 1: Data Ingestion Complete.")
+    except Exception as e:
+        print(f"[-] Ingestion Error: {e}")
 
-    print("\n[SUCCESS] Week 2 Integration Complete.")
+    # --- PHASE 2: ENRICHMENT ---
+    print("\n[*] Starting Phase 2: Geo-IP & DNS Enrichment...")
+    run_enrichment() 
+
+    print("\n" + "="*60)
+    print("          PIPELINE EXECUTION FINISHED ")
+    print("="*60)
 
 if __name__ == "__main__":
     main()
