@@ -20,14 +20,14 @@ class OTXScraper:
 
     def __init__(self):
         self.db = get_database()
-        self.collection = self.db["threat_indicators"] if self.db is not None else None
+        self.collection = self.db["indicators"] if self.db is not None else None
 
     def fetch_pulses(self):
         """Fetch latest threat pulses from AlienVault OTX."""
         url = f"{BASE_URL}/pulses/subscribed"
         headers = {"X-OTX-API-KEY": OTX_API_KEY}
         print("[*] Connecting to AlienVault OTX...")
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=10)
         if response.status_code == 200:
             pulses = response.json().get("results", [])
             print(f"[+] Fetched {len(pulses)} threat pulses.")
