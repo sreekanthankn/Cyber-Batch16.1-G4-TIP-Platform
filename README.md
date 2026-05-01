@@ -63,7 +63,11 @@ MONGO_URI=mongodb://localhost:27017/
 ```bash
 pip install -r requirements.txt
 ```
-
+### Update: [Insert Today's Date]
+- Verified OTX Scraper integration with centralized `indicators` collection.
+- Successfully extracted 27+ threat indicators with full pulse metadata.
+- Confirmed Geo-IP enrichment is functioning (mapping threats to Taiwan/Skycloud).
+- Resolved database connection blockers and standardized collection naming.
 
 
 
