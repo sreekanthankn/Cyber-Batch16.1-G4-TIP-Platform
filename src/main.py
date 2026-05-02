@@ -1,42 +1,71 @@
 import sys
 import os
-# Ensures the project root is in the path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import threading
+import webbrowser
+import time
+from src.api.app import app # Import your Flask app
 
-from src.scrapers.otx_scraper import OTXScraper
-from src.scrapers.phishtank_scraper import PhishTankScraper
-from src.scrapers.abuseipdb_scraper import AbuseIPDBScraper
-from src.processors.enricher import run_enrichment 
+# Ensure project root is in path
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
+from src.scrapers import otx_scraper, abuseipdb_scraper, phishtank_scraper
+from src.processors.normalizer import normalize_data, save_to_db
+from src.processors.enricher import run_enrichment  # <--- Crucial for Week 3
+def start_api():
+    """Function to run the Flask API in a separate thread."""
+    # We turn off debug mode and reloader to prevent threading conflicts
+    app.run(host='127.0.0.1', port=5000, debug=False, use_reloader=False)
 def main():
-    print("="*60)
-    print("      CYBER-TIP PLATFORM: INGESTION & ENRICHMENT ")
-    print("="*60)
+    print("=" * 60)
+    print("  CYBER-TIP PLATFORM: NORMALIZED INGESTION")
+    print("=" * 60)
 
-    # --- PHASE 1: INGESTION ---
-    print("\n[*] Initializing OSINT Scrapers...")
-    
-    # Initialize and run each scraper
-    try:
-        otx = OTXScraper()
-        otx.run()
+    scraper_list = [
+        (otx_scraper.run, "AlienVault OTX"),
+        (abuseipdb_scraper.run, "AbuseIPDB"),
+        (phishtank_scraper.run, "PhishTank")
+    ]
+
+    for run_func, source_name in scraper_list:
+        print(f"[*] Extracting from {source_name}...")
+        raw_indicators = run_func() # Get data from scraper
         
-        abuse = AbuseIPDBScraper()
-        abuse.run()
+        saved_count = 0
+        for item in raw_indicators:
+            # Sreekanth's Normalizer in action:
+            clean_doc = normalize_data(item, source_name)
+            if clean_doc:
+                if save_to_db(clean_doc):
+                    saved_count += 1
         
-        phish = PhishTankScraper()
-        phish.run()
-        print("\n[SUCCESS] Phase 1: Data Ingestion Complete.")
-    except Exception as e:
-        print(f"[-] Ingestion Error: {e}")
+        print(f"[+] {source_name}: Successfully normalized and saved {saved_count} records.")
 
-    # --- PHASE 2: ENRICHMENT ---
-    print("\n[*] Starting Phase 2: Geo-IP & DNS Enrichment...")
-    run_enrichment() 
-
+    print("\n[SUCCESS] Week 2 Integration Complete.")
+    print("\n[*] Starting Week 3 Enrichment Phase...")
+    run_enrichment()
     print("\n" + "="*60)
-    print("          PIPELINE EXECUTION FINISHED ")
+    print("       🚀 LAUNCHING CYBER-TIP DASHBOARD")
     print("="*60)
 
+    # 1. Start the Flask API in the background
+    api_thread = threading.Thread(target=start_api)
+    api_thread.daemon = True # This ensures the API stops when you close the terminal
+    api_thread.start()
+
+    # 2. Give the API 2 seconds to warm up
+    time.sleep(2)
+
+    # 3. Automatically open the browser to your new indicators endpoint
+    url = "http://127.0.0.1:5000/api/v1/indicators"
+    print(f"[*] Opening dashboard at: {url}")
+    webbrowser.open(url)
+
+    # 4. Keep the main script alive so the API stays running
+    print("\n[INFO] Press Ctrl+C to stop the API server and exit.")
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("\n[!] Shutting down Cyber-TIP Platform. Goodbye!")
 if __name__ == "__main__":
     main()
