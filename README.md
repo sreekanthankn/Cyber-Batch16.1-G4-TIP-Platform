@@ -63,13 +63,26 @@ MONGO_URI=mongodb://localhost:27017/
 ```bash
 pip install -r requirements.txt
 ```
-Current Platform Status: Mention the 15,708 managed indicators and the 94.35% health capability you verified in the dashboard.
+## 📊 Current Platform Status (Week 3 Milestone)
+The platform has successfully transitioned from basic collection to an **Automated Intelligence Pipeline**.
+* **Managed Indicators:** 15,708 verified threat entities.
+* **Health Percentage:** 94.35% (capability verified via automated hygiene checks).
+* **System Status:** ONLINE | REST API Active | Multi-threaded Orchestration Stable.
 
-Infrastructure Features: List the REST API, the Automated Web Dashboard, and the Multi-threaded Orchestrator.
+## 🛠️ Infrastructure Features
+* **RESTful API (v1):** Serves real-time JSON threat feeds for external SIEM consumption.
+* **Automated Dashboard:** Live web-based visualization of source breakdowns and risk distribution.
+* **Multi-threaded Orchestrator:** Concurrent execution of ingestion, normalization, and enrichment.
+* **Automated Hygiene:** Real-time DNS resolution and NXDOMAIN purging to prevent database bloat.
 
-Data Sources: List AbuseIPDB (Confidence 90+), PhishTank (Verified URLs), and AlienVault OTX (Pulse-Enriched).
+## 🔌 Integrated Data Sources
+* **AbuseIPDB:** High-confidence (90+) IPv4 blacklists.
+* **PhishTank:** Human-verified phishing URLs with brand-attribution metadata.
+* **AlienVault OTX:** Pulse-enriched indicators with adversary campaign context.
 
-Team Contribution Note: Document that you standardized all ingestion modules to ensure high-fidelity data.
+---
 
+## 🧑‍💻 Team Contribution & Governance
+As Project Lead, I have standardized all ingestion modules (Commit 3) to ensure data consistency across the platform. All contributors are required to pull the latest `main` before initiating Week 4 defense modules to ensure compatibility with the new return-logic framework.
 
 
