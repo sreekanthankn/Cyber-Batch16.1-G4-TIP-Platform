@@ -63,7 +63,13 @@ MONGO_URI=mongodb://localhost:27017/
 ```bash
 pip install -r requirements.txt
 ```
+Current Platform Status: Mention the 15,708 managed indicators and the 94.35% health capability you verified in the dashboard.
 
+Infrastructure Features: List the REST API, the Automated Web Dashboard, and the Multi-threaded Orchestrator.
+
+Data Sources: List AbuseIPDB (Confidence 90+), PhishTank (Verified URLs), and AlienVault OTX (Pulse-Enriched).
+
+Team Contribution Note: Document that you standardized all ingestion modules to ensure high-fidelity data.
 
 
 
