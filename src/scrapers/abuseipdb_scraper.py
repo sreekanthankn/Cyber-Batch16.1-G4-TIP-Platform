@@ -85,3 +85,10 @@ if __name__ == "__main__":
 
     for ip in test_ips:
         process_ip(ip)
+def run():
+    """Run function for main.py orchestrator compatibility."""
+    print("[*] AbuseIPDB scraper running...")
+    test_ips = ["8.8.8.8", "185.220.101.1"]
+    for ip in test_ips:
+        process_ip(ip)
+    print("[+] AbuseIPDB scraper finished.")

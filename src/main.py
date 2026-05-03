@@ -30,6 +30,10 @@ def main():
         print(f"[*] Extracting from {source_name}...")
         raw_indicators = run_func() # Get data from scraper
         
+        if raw_indicators is None:
+            print(f"[!] {source_name} returned no data. Skipping.")
+            continue
+        
         saved_count = 0
         for item in raw_indicators:
             # Sreekanth's Normalizer in action:
