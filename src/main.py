@@ -28,7 +28,7 @@ def main():
 
     for run_func, source_name in scraper_list:
         print(f"[*] Extracting from {source_name}...")
-        raw_indicators = run_func() # Get data from scraper
+        raw_indicators = run_func() or []# Get data from scraper
         
         saved_count = 0
         for item in raw_indicators:

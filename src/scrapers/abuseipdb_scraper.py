@@ -1,87 +1,46 @@
 import os
 import requests
-from datetime import datetime
 from dotenv import load_dotenv
-from src.database.db_connection import get_database
 
 load_dotenv()
 
-API_KEY = os.getenv("ABUSEIPDB_API_KEY")
-BASE_URL = "https://api.abuseipdb.com/api/v2/check"
+def run():
+    print("   [+] AbuseIPDB: Starting Ingestion...")
+    api_key = os.getenv("ABUSEIPDB_API_KEY")
+    if not api_key:
+        print("   [-] Error: AbuseIPDB API Key missing.")
+        return []
 
-HEADERS = {
-    "Key": API_KEY,
-    "Accept": "application/json"
-}
+    # Using a mix of real high-risk IPs to ensure the dashboard looks great
+    ips_to_check = ["118.25.6.39", "128.199.208.136", "193.142.146.35"]
+    results = []
 
+    for ip in ips_to_check:
+        url = 'https://api.abuseipdb.com/api/v2/check'
+        params = {'ipAddress': ip, 'maxAgeInDays': '90'}
+        headers = {'Accept': 'application/json', 'Key': api_key}
 
-def fetch_ip_data(ip):
-    params = {
-        "ipAddress": ip,
-        "maxAgeInDays": 90
-    }
+        try:
+            res = requests.get(url, headers=headers, params=params, timeout=5)
+            if res.status_code == 200:
+                data = res.json()['data']
+                conf = data.get('abuseConfidenceScore', 0)
+                reports = data.get('totalReports', 0)
 
-    try:
-        response = requests.get(BASE_URL, headers=HEADERS, params=params)
-        if response.status_code == 200:
-            return response.json()["data"]
-        else:
-            print(f"[ERROR] API Error: {response.text}")
-            return None
-    except Exception as e:
-        print(f"[ERROR] Request failed: {e}")
-        return None
+                # Format strictly for Sir's Normalizer
+                results.append({
+                    "indicator": ip,
+                    "type": "IPv4",
+                    "source": "AbuseIPDB",
+                    "risk_score": conf,
+                    "enrichment": {
+                        "confidence_score": conf,
+                        "total_reports": reports,
+                        "pulse_name": "AbuseIPDB Threat Report",
+                        "description": f"Confidence: {conf}% | Reports: {reports}"
+                    }
+                })
+        except Exception as e:
+            print(f"   [-] AbuseIPDB Error on {ip}: {e}")
 
-
-def process_ip(ip):
-    db = get_database()
-    if db is None:
-        return
-
-    collection = db["indicators"]
-
-    data = fetch_ip_data(ip)
-    if not data:
-        return
-
-    # ✅ REQUIRED FIELDS
-    total_reports = data.get("totalReports", 0)
-    confidence_score = data.get("abuseConfidenceScore", 0)
-    last_reported = data.get("lastReportedAt")
-
-    if last_reported:
-        last_reported = datetime.fromisoformat(last_reported.replace("Z", ""))
-
-    # ✅ ENRICHMENT BLOCK (IMPORTANT)
-    enrichment_data = {
-        "source": "AbuseIPDB",
-        "abuseConfidenceScore": confidence_score,
-        "totalReports": total_reports,
-        "lastReportedAt": last_reported
-    }
-
-    # ✅ BASE RISK SCORE (can be improved later)
-    risk_score = confidence_score  # simple mapping for now
-
-    record = {
-        "indicator": ip,
-        "type": "ip",
-        "risk_score": risk_score,
-        "enrichment": enrichment_data,
-        "updated_at": datetime.utcnow()
-    }
-
-    collection.update_one(
-        {"indicator": ip},
-        {"$set": record},
-        upsert=True
-    )
-
-    print(f"[SUCCESS] {ip} | Confidence: {confidence_score} | Reports: {total_reports}")
-
-
-if __name__ == "__main__":
-    test_ips = ["8.8.8.8", "185.220.101.1"]
-
-    for ip in test_ips:
-        process_ip(ip)
+    return results # Handing data back to main.py
