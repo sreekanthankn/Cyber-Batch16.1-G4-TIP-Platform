@@ -17,8 +17,16 @@ def fetch_pulses():
     url = f"{BASE_URL}/pulses/subscribed"
     headers = {'X-OTX-API-KEY': OTX_API_KEY}
     print("[*] Connecting to AlienVault OTX...")
+<<<<<<< Updated upstream
     
     response = requests.get(url, headers=headers)
+=======
+        
+    params = {'limit': '10'}  
+    response = requests.get(url, headers=headers, params=params)
+    
+
+>>>>>>> Stashed changes
     if response.status_code == 200:
         data = response.json()
         pulses = data.get('results', [])
@@ -26,7 +34,11 @@ def fetch_pulses():
         return pulses
     else:
         print(f"[-] Failed to fetch. Status: {response.status_code}")
+<<<<<<< Updated upstream
         return []
+=======
+        return []  
+>>>>>>> Stashed changes
 
 def extract_indicators(pulses):
     """Extract IPs and URLs from pulses into standardized format."""

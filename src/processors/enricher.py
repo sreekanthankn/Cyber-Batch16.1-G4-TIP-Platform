@@ -7,9 +7,15 @@ from src.database.db_connection import get_database
 def get_ip_metadata(ip):
     """Fetches Geo-IP and ASN data using the ip-api service."""
     try:
+<<<<<<< Updated upstream
         # Using ip-api.com (Free tier: 45 requests per minute)
         url = f"http://ip-api.com/json/{ip}?fields=status,message,country,city,as,isp"
         response = requests.get(url, timeout=5)
+=======
+        url = f"http://ip-api.com/json/{ip}?fields=status,message,country,city,as,isp"
+        # Reduced timeout to 2 seconds to keep the UI snappy
+        response = requests.get(url, timeout=2) 
+>>>>>>> Stashed changes
         if response.status_code == 200:
             return response.json()
     except Exception as e:
@@ -20,6 +26,7 @@ def resolve_to_ip(indicator, indicator_type):
     """Converts a domain or URL into an IPv4 address via DNS lookup."""
     try:
         if indicator_type == 'URL':
+<<<<<<< Updated upstream
             # Extract domain from URL (e.g., https://malicious.com/path -> malicious.com)
             domain = urlparse(indicator).netloc
         else:
@@ -35,15 +42,37 @@ def run_enrichment():
     db = get_database()
     if db is None: 
         print("[-] Database connection failed. Aborting enrichment.")
+=======
+            domain = urlparse(indicator).netloc
+        else:
+            domain = indicator
+        return socket.gethostbyname(domain)
+    except Exception:
+        return None
+
+def run_enrichment():
+    """Main logic optimized for GUI performance."""
+    db = get_database()
+    if db is None: 
+>>>>>>> Stashed changes
         return
         
     collection = db["threat_indicators"]
     
+<<<<<<< Updated upstream
     # Target any record that does not have an 'enrichment' block yet
     targets = collection.find({
         "enrichment": {"$exists": False},
         "risk_score": {"$gte": 90} 
     }).limit(100) # Process in smaller batches of 100
+=======
+    # MODIFICATION 1: Limit to 5 records for the demo to ensure it finishes quickly
+    # This prevents the 120-second timeout in app.py from triggering
+    targets = collection.find({
+        "enrichment": {"$exists": False},
+        "risk_score": {"$gte": 90} 
+    }).limit(5) 
+>>>>>>> Stashed changes
     
     enriched_count = 0
     deleted_count = 0
@@ -55,6 +84,7 @@ def run_enrichment():
     for doc in targets:
         target_ip = None
         
+<<<<<<< Updated upstream
         # 1. Identify or Resolve the IP
         if doc['type'] == 'IPv4':
             target_ip = doc['indicator']
@@ -63,6 +93,14 @@ def run_enrichment():
             target_ip = resolve_to_ip(doc['indicator'], doc['type'])
 
         # 2. If IP found, perform Geo-IP/ASN Enrichment
+=======
+        if doc['type'] == 'IPv4':
+            target_ip = doc['indicator']
+        elif doc['type'] in ['domain', 'URL']:
+            print(f"[*] Resolving DNS for {doc['indicator']}...")
+            target_ip = resolve_to_ip(doc['indicator'], doc['type'])
+
+>>>>>>> Stashed changes
         if target_ip:
             metadata = get_ip_metadata(target_ip)
             if metadata and metadata.get('status') == 'success':
@@ -79,6 +117,7 @@ def run_enrichment():
                     {"$set": {"enrichment": enrichment_data}}
                 )
                 enriched_count += 1
+<<<<<<< Updated upstream
                 # Sleep to respect the 45 req/min API rate limit
                 time.sleep(2.0)
             else:
@@ -87,12 +126,35 @@ def run_enrichment():
         # 3. AUTO-CLEANUP: If DNS lookup failed for a Domain/URL, delete it
         elif doc['type'] in ['domain', 'URL']:
             print(f"[!] DNS Resolution Failed (NXDOMAIN). Deleting dead threat: {doc['indicator']}")
+=======
+                
+                # MODIFICATION 2: Reduced sleep to 0.5s for the demo
+                # 2.0s is too slow for a real-time progress bar experience
+                time.sleep(0.5) 
+            else:
+                print(f"[-] Skipping {target_ip} due to API limit.")
+        
+        elif doc['type'] in ['domain', 'URL']:
+            print(f"[!] DNS Failed. Purging: {doc['indicator']}")
+>>>>>>> Stashed changes
             collection.delete_one({"_id": doc["_id"]})
             deleted_count += 1
                 
     print("-" * 50)
+<<<<<<< Updated upstream
     print(f"[SUCCESS] Processed: {enriched_count} Enriched | {deleted_count} Purged.")
     print("="*50 + "\n")
 
+=======
+    print(f"[SUCCESS] {enriched_count} Enriched | {deleted_count} Purged.")
+    print("="*50 + "\n")
+
+    # MODIFICATION 3: Force close connection to ensure the subprocess ends
+    try:
+        db.client.close() 
+    except:
+        pass
+
+>>>>>>> Stashed changes
 if __name__ == "__main__":
     run_enrichment()
