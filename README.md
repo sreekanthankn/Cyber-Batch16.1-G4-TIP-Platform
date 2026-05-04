@@ -21,7 +21,33 @@ Enforcer Module: Translates DB records into live kernel DROP rules.
 Ares Suite: Provides feedback loops through automated penetration testing simulation.
 
 Web GUI: A Flask-based dashboard for real-time monitoring and granular review.
-
+## 📂 Project Structure
+```Plaintext
+cyber-tip/
+├── app.py                      # Main Flask application and GUI routes
+├── requirements.txt            # Project dependencies
+├── README.md                   # Project documentation
+├── src/                        # Source code directory
+│   ├── main.py                 # Entry point for the Intel Update module
+│   ├── database/
+│   │   └── db_connection.py    # MongoDB connection and configuration
+│   ├── processors/
+│   │   └── policy_enforcer.py  # Logic for pushing DB records to iptables
+│   ├── tests/
+│   │   ├── pen_test_sim.py     # Ares Pentest validation logic
+│   │   └── auto_pentest.py     # Automated batch testing module
+│   ├── utils/
+│   │   └── rollback.py         # Script to flush/reset firewall rules
+│   └── scrapers/               # Individual intelligence source scripts
+│       ├── abuseipdb.py
+│       ├── phishtank.py
+│       └── alienvault.py
+├── templates/                  # Flask HTML templates
+│   └── index.html              # Main SOC Dashboard UI
+└── static/                     # CSS, JS, and image assets
+    ├── css/
+    └── js/
+```
 ---
 ## 🛠️ Installation & Setup
 Prerequisites
