@@ -4,8 +4,16 @@
     <title>Cyber-TIP SOC Dashboard</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a1a; color: #fff; padding: 20px; }
-        .container { max-width: 1000px; margin: auto; }
+        .container { max-width: 1100px; margin: auto; }
         .card { background: #2d2d2d; border-radius: 8px; padding: 20px; margin-bottom: 20px; border-left: 5px solid #007bff; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: #2d2d2d; border-radius: 8px; padding: 20px; text-align: center; border-top: 4px solid #007bff; }
+        .stat-card.green { border-top-color: #28a745; }
+        .stat-card.red { border-top-color: #dc3545; }
+        .stat-card.yellow { border-top-color: #ffc107; }
+        .stat-card.purple { border-top-color: #6f42c1; }
+        .stat-number { font-size: 2.5em; font-weight: bold; margin: 10px 0; }
+        .stat-label { font-size: 0.85em; color: #aaa; text-transform: uppercase; }
         .btn-group { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px; }
         button { padding: 15px 25px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; font-size: 1em; }
         .btn-intel { background: #28a745; color: white; flex: 1; min-width: 150px; }
@@ -21,36 +29,80 @@
         #terminal { background: #000; color: #0f0; padding: 15px; border-radius: 5px; height: 350px; overflow-y: auto; font-family: 'Courier New', Courier, monospace; border: 1px solid #444; line-height: 1.4; }
         #progress-bar-container { width: 100%; background-color: #444; border-radius: 5px; margin-bottom: 10px; display: none; }
         #progress-bar { width: 0%; height: 12px; background-color: #28a745; border-radius: 5px; transition: width 0.4s ease; }
+        .brand-bar { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+        .brand-bar-fill { height: 20px; background: #007bff; border-radius: 4px; transition: width 0.5s; }
+        .brand-name { min-width: 120px; font-size: 0.9em; }
+        .heatmap-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+        .heatmap-cell { background: #1a1a1a; border-radius: 6px; padding: 15px; text-align: center; border: 1px solid #444; }
+        .heatmap-cell .count { font-size: 1.8em; font-weight: bold; color: #ff4757; }
+        .heatmap-cell .source { font-size: 0.8em; color: #aaa; margin-top: 5px; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🛡️ Cyber-TIP Operations Center</h1>
-        
+        <p style="color:#aaa;">Security Operations Center — Week 4 Active Defense Dashboard</p>
+
+        <!-- SOC STATS GRID -->
+        <div class="stats-grid" id="stats-grid">
+            <div class="stat-card green">
+                <div class="stat-label">Total Indicators</div>
+                <div class="stat-number" id="stat-total">...</div>
+                <div style="color:#aaa; font-size:0.8em;">In Database</div>
+            </div>
+            <div class="stat-card red">
+                <div class="stat-label">High Risk / Blocked</div>
+                <div class="stat-number" id="stat-blocked" style="color:#ff4757;">...</div>
+                <div style="color:#aaa; font-size:0.8em;">Risk Score ≥ 90</div>
+            </div>
+            <div class="stat-card yellow">
+                <div class="stat-label">Phishing URLs</div>
+                <div class="stat-number" id="stat-phish" style="color:#ffc107;">...</div>
+                <div style="color:#aaa; font-size:0.8em;">PhishTank Feed</div>
+            </div>
+            <div class="stat-card purple">
+                <div class="stat-label">Threat Pulses</div>
+                <div class="stat-number" id="stat-otx" style="color:#a78bfa;">...</div>
+                <div style="color:#aaa; font-size:0.8em;">AlienVault OTX</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Malicious IPs</div>
+                <div class="stat-number" id="stat-abuse" style="color:#60a5fa;">...</div>
+                <div style="color:#aaa; font-size:0.8em;">AbuseIPDB</div>
+            </div>
+        </div>
+
+        <!-- THREAT ORIGIN HEATMAP -->
+        <div class="card" style="border-left-color: #ff4757;">
+            <h3>🌍 Threat Origin Heatmap</h3>
+            <p style="color:#aaa; font-size:0.85em;">Top brands being impersonated by phishing campaigns</p>
+            <div id="brand-heatmap">
+                <p style="color:#aaa;">Loading threat intelligence...</p>
+            </div>
+        </div>
+
+        <!-- CONTROL MODULES -->
         <div class="card">
             <h3>Control Modules</h3>
             <div class="btn-group">
-                <button class="btn-intel" onclick="runTask('intel')">Update Intel</button>
-                <button class="btn-enforce" onclick="runTask('enforce')">Push Defense</button>
-                <button class="btn-batch" onclick="runTask('auto_test')">Batch Pentest</button>
-                <button style="background: #17a2b8; color: white; flex: 1;" onclick="showBlockedList()">View Blocklist</button>
-                <button class="btn-rollback" onclick="runTask('rollback')">Rollback</button>
+                <button class="btn-intel" onclick="runTask('intel')">🔄 Update Intel</button>
+                <button class="btn-enforce" onclick="runTask('enforce')">🛡️ Push Defense</button>
+                <button class="btn-batch" onclick="runTask('auto_test')">⚡ Batch Pentest</button>
+                <button style="background: #17a2b8; color: white; flex: 1;" onclick="showBlockedList()">👁️ View Blocklist</button>
+                <button class="btn-rollback" onclick="runTask('rollback')">⏪ Rollback</button>
             </div>
-            <!-- STOP BUTTON ADDED HERE -->
             <button id="stop-btn" class="btn-stop" onclick="terminateTask()">⏹️ Stop Active Task</button>
-
             <hr style="border: 0; border-top: 1px solid #444; margin: 20px 0;">
-            
             <h3>Network Diagnostic & Pen-Test</h3>
-<div class="diagnostic-row">
-    <input type="text" id="test-url" placeholder="Enter Site URL (e.g., google.com)">
-    <button class="btn-test" onclick="runCustomTest()">Run Connectivity Check</button>
-    <!-- New Unblock Button -->
-    <button style="background: #6c757d; color: white;" onclick="unblockTarget()">Unblock This IP</button>
-</div>
-<div id="test-result-display">🔍 Initializing Test...</div>
+            <div class="diagnostic-row">
+                <input type="text" id="test-url" placeholder="Enter Site URL or IP (e.g., google.com)">
+                <button class="btn-test" onclick="runCustomTest()">🔍 Test Connectivity</button>
+                <button style="background: #6c757d; color: white;" onclick="unblockTarget()">🔓 Unblock IP</button>
+            </div>
+            <div id="test-result-display">🔍 Initializing Test...</div>
         </div>
 
+        <!-- EXECUTION LOGS -->
         <div class="card">
             <h3>Execution Logs</h3>
             <div id="progress-bar-container">
@@ -58,12 +110,12 @@
                 <small id="status-text" style="color: #0f0;">System standby...</small>
             </div>
             <div id="blocklist-container" class="card" style="display:none; border-left: 5px solid #17a2b8;">
-    <div style="display:flex; justify-content:space-between;">
-        <h3>Active Threat Blocklist (Top 50)</h3>
-        <button onclick="document.getElementById('blocklist-container').style.display='none'" style="background:none; color:white; font-size:1.5em; padding:0;">×</button>
-    </div>
-    <div id="blocklist-content" style="max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.9em;"></div>
-</div>
+                <div style="display:flex; justify-content:space-between;">
+                    <h3>Active Threat Blocklist (Top 50)</h3>
+                    <button onclick="document.getElementById('blocklist-container').style.display='none'" style="background:none; color:white; font-size:1.5em; padding:0;">×</button>
+                </div>
+                <div id="blocklist-content" style="max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.9em;"></div>
+            </div>
             <div id="terminal">System Ready. Awaiting instructions...</div>
         </div>
     </div>
@@ -71,43 +123,72 @@
 <script>
     let taskInterval;
 
+    // Load SOC stats on page load
+    window.onload = function() {
+        loadStats();
+    }
+
+    function loadStats() {
+        fetch('/api/v1/stats')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('stat-total').innerText = data.total_indicators.toLocaleString();
+                document.getElementById('stat-blocked').innerText = data.high_risk_blocked.toLocaleString();
+                document.getElementById('stat-phish').innerText = data.source_breakdown.PhishTank.toLocaleString();
+                document.getElementById('stat-otx').innerText = data.source_breakdown.AlienVault_OTX.toLocaleString();
+                document.getElementById('stat-abuse').innerText = data.source_breakdown.AbuseIPDB.toLocaleString();
+
+                // Render Brand Heatmap
+                const heatmap = document.getElementById('brand-heatmap');
+                if (data.top_targeted_brands && data.top_targeted_brands.length > 0) {
+                    const maxCount = data.top_targeted_brands[0].count;
+                    let html = '';
+                    data.top_targeted_brands.forEach(b => {
+                        const pct = Math.round((b.count / maxCount) * 100);
+                        html += `
+                        <div class="brand-bar">
+                            <div class="brand-name">🎯 ${b.brand}</div>
+                            <div style="flex:1; background:#1a1a1a; border-radius:4px; height:24px;">
+                                <div class="brand-bar-fill" style="width:${pct}%; height:100%;"></div>
+                            </div>
+                            <div style="min-width:60px; text-align:right; color:#ff4757; font-weight:bold;">${b.count}</div>
+                        </div>`;
+                    });
+                    heatmap.innerHTML = html;
+                } else {
+                    heatmap.innerHTML = '<p style="color:#aaa;">No brand attribution data yet. Run your PhishTank scraper first.</p>';
+                }
+            })
+            .catch(err => {
+                console.error('Stats load error:', err);
+            });
+    }
+
     function runTask(task) {
         const term = document.getElementById('terminal');
         const progressBar = document.getElementById('progress-bar');
         const container = document.getElementById('progress-bar-container');
         const statusText = document.getElementById('status-text');
         const stopBtn = document.getElementById('stop-btn');
-
-        // Reset UI
         term.innerHTML += `<br>> Starting ${task}...`;
         container.style.display = 'block';
         stopBtn.style.display = 'block';
         progressBar.style.width = '0%';
         statusText.innerText = "Initializing " + task + "...";
-        
         let width = 0;
         clearInterval(taskInterval);
-
-        // Smart Progress Bar Interval
-    // Inside runTask function in index.html
-    taskInterval = setInterval(() => {
-        if (width < 95) {
-            if (task === 'intel') {
-                width += 0.5; 
-            } else if (task === 'auto_test') {
-                width += 4; // FASTER: Moves roughly 4% per second, hitting 90% in ~22s
-            } else {
-                width += 5; 
+        taskInterval = setInterval(() => {
+            if (width < 95) {
+                width += task === 'intel' ? 0.5 : task === 'auto_test' ? 4 : 5;
+                progressBar.style.width = width + '%';
+                statusText.innerText = "Processing " + task + "...";
             }
-            progressBar.style.width = width + '%';
-            statusText.innerText = "Processing " + task + "...";
-        }
-    }, 1000);
-
+        }, 1000);
         fetch(`/execute/${task}`)
             .then(res => res.json())
             .then(data => {
                 completeUI(data.output);
+                loadStats(); // Refresh stats after task
             })
             .catch(err => handleError(err));
     }
@@ -116,20 +197,16 @@
         const url = document.getElementById('test-url').value;
         const display = document.getElementById('test-result-display');
         const term = document.getElementById('terminal');
-
         if (!url) return alert("Please enter a URL or IP.");
-
         display.style.display = 'block';
         display.style.background = '#444';
         display.innerHTML = `🔍 Testing Connectivity to ${url}...`;
         term.innerHTML += `<br>> Diagnosing connection to: ${url}`;
-
         fetch(`/execute/test?target=${url}`)
             .then(res => res.json())
             .then(data => {
                 term.innerHTML += `<pre>${data.output}</pre>`;
                 term.scrollTop = term.scrollHeight;
-
                 if (data.status === "blocked") {
                     display.style.background = "#dc3545";
                     display.innerHTML = "🚫 ACCESS BLOCKED: Firewall Active";
@@ -148,7 +225,6 @@
         const term = document.getElementById('terminal');
         term.innerHTML += `<pre>${output}</pre>`;
         term.scrollTop = term.scrollHeight;
-        
         setTimeout(() => {
             document.getElementById('progress-bar-container').style.display = 'none';
             document.getElementById('stop-btn').style.display = 'none';
@@ -174,60 +250,55 @@
                 clearInterval(taskInterval);
             });
     }
+
     function unblockTarget() {
-    const url = document.getElementById('test-url').value;
-    const display = document.getElementById('test-result-display');
-    const term = document.getElementById('terminal');
-
-    if (!url) return alert("Enter an IP to unblock.");
-
-    display.style.display = 'block';
-    display.style.background = '#444';
-    display.innerHTML = `♻️ Attempting to unblock ${url}...`;
-
-    fetch(`/execute/unblock?target=${url}`)
-        .then(res => res.json())
-        .then(data => {
-            term.innerHTML += `<br>> ${data.output}`;
-            term.scrollTop = term.scrollHeight;
-            
-            if (data.status === "open") {
-                display.style.background = "#28a745"; // Success Green
-                display.innerHTML = `✅ ${url} is now ALLOWED`;
-            } else {
-                display.style.background = "#dc3545"; // Error Red
-                display.innerHTML = "❌ Unblock Failed";
-            }
-        });
+        const url = document.getElementById('test-url').value;
+        const display = document.getElementById('test-result-display');
+        const term = document.getElementById('terminal');
+        if (!url) return alert("Enter an IP to unblock.");
+        display.style.display = 'block';
+        display.style.background = '#444';
+        display.innerHTML = `♻️ Attempting to unblock ${url}...`;
+        fetch(`/execute/unblock?target=${url}`)
+            .then(res => res.json())
+            .then(data => {
+                term.innerHTML += `<br>> ${data.output}`;
+                term.scrollTop = term.scrollHeight;
+                if (data.status === "open") {
+                    display.style.background = "#28a745";
+                    display.innerHTML = `✅ ${url} is now ALLOWED`;
+                } else {
+                    display.style.background = "#dc3545";
+                    display.innerHTML = "❌ Unblock Failed";
+                }
+            });
     }
-    function showBlockedList() {
-    const container = document.getElementById('blocklist-container');
-    const content = document.getElementById('blocklist-content');
-    
-    container.style.display = 'block';
-    content.innerHTML = "⌛ Correlating Kernel Rules with Threat Intel...";
 
-    fetch('/execute/view_blocked')
-        .then(res => res.json())
-        .then(data => {
-            if (data.items && data.items.length > 0) {
-                let html = '<table style="width:100%; text-align:left; border-collapse: collapse;">';
-                html += '<tr style="border-bottom: 2px solid #17a2b8;"><th>Blocked IP</th><th>Source/URL</th><th>Risk Score</th></tr>';
-                
-                data.items.forEach(item => {
-                    html += `<tr style="border-bottom: 1px solid #333; height: 35px;">
-                        <td style="color:#ff4757; font-weight:bold; font-family:monospace;">${item.indicator}</td>
-                        <td style="color:#0f0; font-size:0.85em;">${item.url}</td>
-                        <td style="text-align:center;"><span style="background:#444; padding:2px 8px; border-radius:4px;">${item.score}</span></td>
-                    </tr>`;
-                });
-                html += '</table>';
-                content.innerHTML = html;
-            } else {
-                content.innerHTML = "No active high-risk rules found in the kernel.";
-            }
-        });
-}
+    function showBlockedList() {
+        const container = document.getElementById('blocklist-container');
+        const content = document.getElementById('blocklist-content');
+        container.style.display = 'block';
+        content.innerHTML = "⌛ Correlating Kernel Rules with Threat Intel...";
+        fetch('/execute/view_blocked')
+            .then(res => res.json())
+            .then(data => {
+                if (data.items && data.items.length > 0) {
+                    let html = '<table style="width:100%; text-align:left; border-collapse: collapse;">';
+                    html += '<tr style="border-bottom: 2px solid #17a2b8;"><th>Blocked IP</th><th>Source/URL</th><th>Risk Score</th></tr>';
+                    data.items.forEach(item => {
+                        html += `<tr style="border-bottom: 1px solid #333; height: 35px;">
+                            <td style="color:#ff4757; font-weight:bold; font-family:monospace;">${item.indicator}</td>
+                            <td style="color:#0f0; font-size:0.85em;">${item.url}</td>
+                            <td style="text-align:center;"><span style="background:#444; padding:2px 8px; border-radius:4px;">${item.score}</span></td>
+                        </tr>`;
+                    });
+                    html += '</table>';
+                    content.innerHTML = html;
+                } else {
+                    content.innerHTML = "No active high-risk rules found in the kernel.";
+                }
+            });
+    }
 </script>
 </body>
 </html>
