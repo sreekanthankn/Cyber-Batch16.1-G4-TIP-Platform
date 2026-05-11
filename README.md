@@ -5,7 +5,7 @@ The Cyber-TIP (Threat Intelligence Platform) is a specialized SOC dashboard desi
 
 ## 🧑‍💻 Group 4 | Batch 16.1
 * **Project Lead:** Sreekanthan K N
-* **Team Members:** Nikhil S, Sudarshan Mahto, Amaan Roshan, Akanksha Sharma
+* **Team Members:** Nikhil S, Sudarshan Mahto, Amaan Roshan
 
 ---
 ## ✨ Key FeaturesAutomated Intelligence Ingestion: 
